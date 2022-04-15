@@ -7,9 +7,11 @@ use crate::{
     system::{System, SystemStore, SystemStoreBuilder},
 };
 
-/// The `World` struct represents the main interface of the library. It used
-/// as storage of entities, components and systems.
-pub struct World<E, Ctx>
+
+/// The `World` struct represents the main interface of the
+/// library. It is used as a storage provider for entities, components
+/// and systems.
+pub struct World<E: 'static, Ctx: 'static>
 where
     E: EntityStore,
 {
@@ -19,7 +21,7 @@ where
     first_run: bool,
 }
 
-impl<E, Ctx> Drop for World<E, Ctx>
+impl<E: 'static, Ctx: 'static> Drop for World<E, Ctx>
 where
     E: EntityStore,
 {
