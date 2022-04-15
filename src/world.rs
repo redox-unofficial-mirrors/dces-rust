@@ -8,9 +8,10 @@ use crate::{
     system::{System, SystemStore, SystemStoreBuilder},
 };
 
-/// The `World` struct represents the main interface of the library. It used
-/// as storage of entities, components and systems.
-pub struct World<E>
+/// The `World` struct represents the main interface of the
+/// library. It is used as a storage provider for entities, components
+/// and systems.
+pub struct World<E: 'static>
 where
     E: EntityStore,
 {
@@ -21,7 +22,7 @@ where
     first_run: bool,
 }
 
-impl<E> Drop for World<E>
+impl<E: 'static> Drop for World<E>
 where
     E: EntityStore,
 {
@@ -86,12 +87,12 @@ where
         self.resources.try_get_mut::<C>()
     }
 
-    /// Returns `true` if the resources contains a resource of the given type overwise `false` .
+    /// Returns `true` if the resources contains a resource of the given type, overwise `false` .
     pub fn contains_resource<C: Component>(&self) -> bool {
         self.resources.contains::<C>()
     }
 
-    /// Creates a new entity and returns a returns an `TypeEntityBuilder`.
+    /// Creates a new entity and returns a `TypeEntityBuilder`.
     pub fn create_entity(&mut self) -> EntityBuilder<'_, E> {
         self.entity_component_manager.create_entity()
     }
