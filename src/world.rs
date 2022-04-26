@@ -35,6 +35,7 @@ where
     }
 }
 
+// TODO: explain why this is safe code
 unsafe impl<E> Send for World<E> where E: EntityStore {}
 
 impl<E> World<E>

@@ -8,7 +8,7 @@ impl From<u32> for Entity {
     }
 }
 
-/// This trait provides associated functions to handle entity stores.
+/// This trait provides methods to handle entity stores.
 ///
 /// Each entity serves as a container. Inside the system's run
 /// methods, you can iterate over the registered entities.

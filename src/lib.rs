@@ -4,12 +4,25 @@
 
 //! # DCES
 //!
-//! DCES is a library that provides a variant of the entity component system.
+//! DCES is a library that implements a dense entity component system
+//! targeted to be consumed in a native rust ecosystem. In contrast to
+//! the Object Oriented Programming (OOP) paradigma, the DCES
+//! separates data from behavior. Its entities can have multiple, dynamically changing components.
+//!
+//! Structure:
+//!
+//! * entity -> uniquely identify an object, can contain zero or more components.
+//! * component -> datatypes that can be added to an entity, stores valid property values.
+//! * resource ->
+//! * entity_component_manager -> keeps track of an entity store (bound entities and an associated component store).
+//! * store -> instance of a given storage provider, that handles multiple entities, componets or resources.
+//! * systems -> functions that run for all entities matching a component query.
+//! * world -> instance of a given entity storage provider, handled via the entity_component_manager.
 //!
 //! Features:
 //!
-//! * Filter and sort entities for systems
-//! * Define priorities (run order) for systems
+//! * Filter/query and sort entities for stores.
+//! * Define priorities (run order) for stores.
 //!
 //! **The library is still WIP. API changes are possible.**
 //!
