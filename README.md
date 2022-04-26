@@ -103,7 +103,7 @@ cargo doc --no-deps --open
 ## Online guide
 
 If you like to dig into the concept root of DCES, you may enjoy to
-read the [[`guide`][dces-guide]. The sources are provided inside a sub-module. It
+read the [`guide`][dces_guide]. The sources are provided inside a sub-module. It
 discusses the very concept on which `DCES` is built.  A bird`s eye
 view of essential building blocks is presented. Their discussion is
 co-centered on the details relevant to the implementation.
@@ -112,10 +112,10 @@ You may download the project including this sub-module while cloning
 the repository like this:
 
 ```text
-git clone --recurse-submodules https://gitlab.redox-os.org/redox-os/dces-rust.git#development
+git clone --recurse-submodules https://gitlab.redox-os.org/redox-os/dces-rust.git
 ```
 
-[dces_guide]:`https://gitlab.redox-os.org/rzerres/guide/dces-rust/en/html/index.html`
+[dces_guide]: https://gitlab.redox-os.org/rzerres/dces-guide
 
 ## Future features
 
