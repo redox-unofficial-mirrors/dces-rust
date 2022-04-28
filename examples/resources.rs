@@ -5,11 +5,11 @@ struct Name {
     value: String,
 }
 
-struct HelloWorld;
+struct HelloDCES;
 
-impl HelloWorld {
+impl HelloDCES {
     pub fn say_hello(&self) -> &str {
-        return "Hello World";
+        return "Hello DECS!";
     }
 }
 
@@ -25,7 +25,7 @@ impl System<EntityStore> for PrintSystem {
             }
         }
 
-        println!("{}", res.get::<HelloWorld>().say_hello());
+        println!("{}", res.get::<HelloDCES>().say_hello());
     }
 }
 
@@ -46,8 +46,9 @@ fn main() {
         )
         .build();
 
-    world.resources_mut().insert(HelloWorld);
+    world.resources_mut().insert(HelloDCES);
 
     world.create_system(PrintSystem).build();
+
     world.run();
 }

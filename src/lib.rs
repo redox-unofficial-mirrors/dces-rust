@@ -11,10 +11,10 @@
 //!
 //! Structure:
 //!
-//! * entity -> uniquely identify an object, can contain zero or more components.
 //! * component -> datatypes that can be added to an entity, stores valid property values.
-//! * resource ->
+//! * entity -> uniquely identify an object, can contain zero or more components.
 //! * entity_component_manager -> keeps track of an entity store (bound entities and an associated component store).
+//! * resource -> data slot that structures components. Can be borrowed between systems.
 //! * store -> instance of a given storage provider, that handles multiple entities, componets or resources.
 //! * systems -> functions that run for all entities matching a component query.
 //! * world -> instance of a given entity storage provider, handled via the entity_component_manager.
