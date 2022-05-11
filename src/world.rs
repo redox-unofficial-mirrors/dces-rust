@@ -9,8 +9,15 @@ use crate::{
 };
 
 /// The `World` struct represents the main interface of the
-/// library. It is used as a storage provider for entities, components
-/// and systems.
+/// library.
+///
+/// Its EntityComponentManager offers all functions to manage
+/// associated entities and components (the data structures). Both are
+/// implemented in distict storage providers (e_store,
+/// c_store). Behaviors are handled in systems, which are implemented
+/// in destinct system stores. Resources are structures, that can be
+/// used to group components.
+
 pub struct World<E: 'static>
 where
     E: EntityStore,
@@ -36,6 +43,8 @@ where
 }
 
 // TODO: explain why this is safe code
+// A: we don't use threads to handle worlds
+// B: their is only one owner for a given world
 unsafe impl<E> Send for World<E> where E: EntityStore {}
 
 impl<E> World<E>
