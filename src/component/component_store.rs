@@ -18,10 +18,16 @@ pub struct ComponentBuilder {
 }
 
 impl ComponentBuilder {
+    /// Finishing the creation of the entity.
+    pub fn build(self) -> (BuildComponents, BuildSharedComponents) {
+        (self.components, self.shared)
+    }
+
     /// Creates an new builder with default values.
     pub fn new() -> Self {
         Self::default()
     }
+
     /// Adds a component of type `C` to the entity.
     pub fn with<C: Component>(mut self, key: &str, component: C) -> Self {
         self.components.insert(key.into(), Box::new(component));
@@ -43,11 +49,6 @@ impl ComponentBuilder {
     ) -> Self {
         self.shared.insert(key.into(), (source, source_key.into()));
         self
-    }
-
-    /// Finishing the creation of the entity.
-    pub fn build(self) -> (BuildComponents, BuildSharedComponents) {
-        (self.components, self.shared)
     }
 }
 
@@ -74,45 +75,9 @@ impl ComponentStore {
         }
     }
 
-    /// Removes and entity from the store.
-    pub fn remove_entity(&mut self, entity: impl Into<Entity>) {
-        let entity = entity.into();
-        let keys: Vec<(Entity, String)> = self
-            .components
-            .iter()
-            .filter(|&(k, _)| k.0 == entity)
-            .map(|(k, _)| k.clone())
-            .collect();
-
-        for k in keys {
-            self.components.remove(&k);
-        }
-
-        let keys: Vec<(Entity, String)> = self
-            .shared
-            .iter()
-            .filter(|&(k, _)| k.0 == entity)
-            .map(|(k, _)| k.clone())
-            .collect();
-
-        for k in keys {
-            self.shared.remove(&k);
-        }
-    }
-
-    /// Print infos about the given entity.
-    pub fn print_entity(&self, entity: impl Into<Entity>) {
-        let entity = entity.into();
-
-        println!("Components of entity: {}", entity.0);
-        for (k, v) in self.components.iter().filter(|&(k, _)| k.0 == entity) {
-            println!("Key: {:?}, Value: {:?}", k, v);
-        }
-
-        println!("Shared components of entity: {}", entity.0);
-        for (k, v) in self.shared.iter().filter(|&(k, _)| k.0 == entity) {
-            println!("Key: {:?}, Value: {:?}", k, v);
-        }
+    /// Returns `true` if the store contains the specific entity.
+    pub fn contains_entity(&self, entity: Entity) -> bool {
+        self.components.iter().any(|(k, _)| k.0 == entity)
     }
 
     /// Returns a list of entities that references the same component.
@@ -140,6 +105,96 @@ impl ComponentStore {
         entities.append(&mut filtered_entities);
 
         entities
+    }
+
+    /// Returns a reference of a component assigned to the given
+    /// `entity`, that matches type `C`.
+    ///
+    /// If the entity does not exists or its assigned component
+    /// doesn't correspond type `C`, the function will return
+    /// `NotFound`.
+    pub fn get<C: Component>(&self, key: &str, entity: Entity) -> Result<&C, NotFound> {
+        let source = self.source(entity, key);
+
+        match source {
+            Ok(source) => self
+                .components
+                .get(&(source.0, source.1))
+                .ok_or(NotFound::Entity(entity))
+                .map(|component| {
+                    component
+                        .downcast_ref()
+                        .expect("ComponentStore.get: internal downcast error")
+                }),
+            Err(_) => Result::Err(NotFound::Entity(entity)),
+        }
+    }
+
+    /// Returns a mutable reference of the requested component
+    /// assigend to given `entity` that matches type `C`.
+    ///
+    /// If the entity in questions does not exists or its component
+    /// doesn't corresponedent to type `C`, the function will return
+    /// `NotFound`.
+    pub fn get_mut<C: Component>(&mut self, key: &str, entity: Entity) -> Result<&mut C, NotFound> {
+        let source = self.source(entity, key);
+
+        match source {
+            Ok(source) => self
+                .components
+                .get_mut(&(source.0, source.1))
+                .ok_or(NotFound::Entity(entity))
+                .map(|component| {
+                    component
+                        .downcast_mut()
+                        .expect("ComponentStore.get_mut: internal downcast error")
+                }),
+            Err(_) => Result::Err(NotFound::Entity(entity)),
+        }
+    }
+
+    /// Check if the given component has the given type.
+    pub fn is<C: Component>(&self, key: &str, entity: Entity) -> Result<bool, NotFound> {
+        let source = self.source(entity, key);
+
+        match source {
+            Ok(source) => self
+                .components
+                .get(&(source.0, source.1))
+                .ok_or(NotFound::Entity(entity))
+                .map(|component| (*component).is::<C>()),
+            Err(_) => Result::Err(NotFound::Entity(entity)),
+        }
+    }
+
+    /// Returns true if the components are empty.
+    pub fn is_empty(&self) -> bool {
+        self.components.is_empty()
+    }
+
+    /// Returns `true` if entity is the origin of the requested component `false`.
+    pub fn is_origin<C: Component>(&self, key: &str, entity: Entity) -> bool {
+        self.components.contains_key(&(entity, key.to_string()))
+    }
+
+    /// Returns the number of components in the store.
+    pub fn len(&self) -> usize {
+        self.components.len()
+    }
+
+    /// Print infos about the given entity.
+    pub fn print_entity(&self, entity: impl Into<Entity>) {
+        let entity = entity.into();
+
+        println!("Components of entity: {}", entity.0);
+        for (k, v) in self.components.iter().filter(|&(k, _)| k.0 == entity) {
+            println!("Key: {:?}, Value: {:?}", k, v);
+        }
+
+        println!("Shared components of entity: {}", entity.0);
+        for (k, v) in self.shared.iter().filter(|&(k, _)| k.0 == entity) {
+            println!("Key: {:?}, Value: {:?}", k, v);
+        }
     }
 
     /// Register a `component` for the given `entity`.
@@ -202,24 +257,56 @@ impl ComponentStore {
         self.components.insert((entity, key.into()), component);
     }
 
-    /// Returns the number of components in the store.
-    pub fn len(&self) -> usize {
-        self.components.len()
+    /// Removes and entity from the store.
+    pub fn remove_entity(&mut self, entity: impl Into<Entity>) {
+        let entity = entity.into();
+        let keys: Vec<(Entity, String)> = self
+            .components
+            .iter()
+            .filter(|&(k, _)| k.0 == entity)
+            .map(|(k, _)| k.clone())
+            .collect();
+
+        for k in keys {
+            self.components.remove(&k);
+        }
+
+        let keys: Vec<(Entity, String)> = self
+            .shared
+            .iter()
+            .filter(|&(k, _)| k.0 == entity)
+            .map(|(k, _)| k.clone())
+            .collect();
+
+        for k in keys {
+            self.shared.remove(&k);
+        }
     }
 
-    /// Returns true if the components are empty.
-    pub fn is_empty(&self) -> bool {
-        self.components.is_empty()
-    }
 
-    /// Returns `true` if the store contains the specific entity.
-    pub fn contains_entity(&self, entity: Entity) -> bool {
-        self.components.iter().any(|(k, _)| k.0 == entity)
-    }
+    /// Returns the source. First search in entities map. If not found search in shared entity map.
+    pub fn source(
+        &self,
+        entity: Entity,
+        key: impl Into<String>,
+    ) -> Result<(Entity, String), NotFound> {
+        let key = (entity, key.into());
+        if !self.components.contains_key(&key) {
+            let mut source = self.source_from_shared(key.1.clone(), key.0);
 
-    /// Returns `true` if entity is the origin of the requested component `false`.
-    pub fn is_origin<C: Component>(&self, key: &str, entity: Entity) -> bool {
-        self.components.contains_key(&(entity, key.to_string()))
+            loop {
+                if source.is_err() || self.components.contains_key(source.as_ref().unwrap()) {
+                    return source;
+                }
+
+                source = self.source_from_shared(
+                    source.as_ref().unwrap().1.as_str(),
+                    source.as_ref().unwrap().0,
+                );
+            }
+        }
+
+        Result::Ok(key)
     }
 
     // Search the the source in the entity map.
@@ -249,83 +336,6 @@ impl ComponentStore {
             .find(|(k, v)| k.0 == target && v.0 == source_key.0 && v.1 == source_key.1)
             .ok_or(NotFound::Key(source_key))
             .map(|(k, _)| k.1.clone())
-    }
-
-    /// Returns the source. First search in entities map. If not found search in shared entity map.
-    pub fn source(
-        &self,
-        entity: Entity,
-        key: impl Into<String>,
-    ) -> Result<(Entity, String), NotFound> {
-        let key = (entity, key.into());
-        if !self.components.contains_key(&key) {
-            let mut source = self.source_from_shared(key.1.clone(), key.0);
-
-            loop {
-                if source.is_err() || self.components.contains_key(source.as_ref().unwrap()) {
-                    return source;
-                }
-
-                source = self.source_from_shared(
-                    source.as_ref().unwrap().1.as_str(),
-                    source.as_ref().unwrap().0,
-                );
-            }
-        }
-
-        Result::Ok(key)
-    }
-
-    /// Check if the given component has the given type.
-    pub fn is<C: Component>(&self, key: &str, entity: Entity) -> Result<bool, NotFound> {
-        let source = self.source(entity, key);
-
-        match source {
-            Ok(source) => self
-                .components
-                .get(&(source.0, source.1))
-                .ok_or(NotFound::Entity(entity))
-                .map(|component| (*component).is::<C>()),
-            Err(_) => Result::Err(NotFound::Entity(entity)),
-        }
-    }
-
-    /// Returns a reference of a component of type `C` from the given `entity`. If the entity does
-    /// not exists or it doesn't have a component of type `C` `NotFound` will be returned.
-    pub fn get<C: Component>(&self, key: &str, entity: Entity) -> Result<&C, NotFound> {
-        let source = self.source(entity, key);
-
-        match source {
-            Ok(source) => self
-                .components
-                .get(&(source.0, source.1))
-                .ok_or(NotFound::Entity(entity))
-                .map(|component| {
-                    component
-                        .downcast_ref()
-                        .expect("ComponentStore.get: internal downcast error")
-                }),
-            Err(_) => Result::Err(NotFound::Entity(entity)),
-        }
-    }
-
-    /// Returns a mutable reference of a component of type `C` from the given `entity`. If the entity does
-    /// not exists or it doesn't have a component of type `C` `NotFound` will be returned.
-    pub fn get_mut<C: Component>(&mut self, key: &str, entity: Entity) -> Result<&mut C, NotFound> {
-        let source = self.source(entity, key);
-
-        match source {
-            Ok(source) => self
-                .components
-                .get_mut(&(source.0, source.1))
-                .ok_or(NotFound::Entity(entity))
-                .map(|component| {
-                    component
-                        .downcast_mut()
-                        .expect("ComponentStore.get_mut: internal downcast error")
-                }),
-            Err(_) => Result::Err(NotFound::Entity(entity)),
-        }
     }
 }
 

@@ -108,25 +108,6 @@ impl<E> EntityComponentManager<E>
 where
     E: EntityStore,
 {
-    /// Create a new entity component manager.
-    pub fn new(entity_store: E) -> Self {
-        EntityComponentManager {
-            entity_counter: 0,
-            component_store: ComponentStore::default(),
-            entity_store,
-        }
-    }
-
-    /// Returns references to the entity and component store.
-    pub fn stores(&self) -> (&E, &ComponentStore) {
-        (&self.entity_store, &self.component_store)
-    }
-
-    /// Returns mutable references to the entity and component store.
-    pub fn stores_mut(&mut self) -> (&mut E, &mut ComponentStore) {
-        (&mut self.entity_store, &mut self.component_store)
-    }
-
     /// Return a reference to the component store.
     pub fn component_store(&self) -> &ComponentStore {
         &self.component_store
@@ -135,6 +116,18 @@ where
     /// Return a mutable reference to the component store.
     pub fn component_store_mut(&mut self) -> &mut ComponentStore {
         &mut self.component_store
+    }
+
+    /// Creates a new entity and returns an `EntityBuilder`.
+    pub fn create_entity(&mut self) -> EntityBuilder<'_, E> {
+        let entity: Entity = self.entity_counter.into();
+        self.entity_counter += 1;
+
+        EntityBuilder {
+            entity,
+            component_store: &mut self.component_store,
+            entity_store: &mut self.entity_store,
+        }
     }
 
     /// Return a reference to the entity store.
@@ -147,15 +140,12 @@ where
         &mut self.entity_store
     }
 
-    /// Creates a new entity and returns an `EntityBuilder`.
-    pub fn create_entity(&mut self) -> EntityBuilder<'_, E> {
-        let entity: Entity = self.entity_counter.into();
-        self.entity_counter += 1;
-
-        EntityBuilder {
-            entity,
-            component_store: &mut self.component_store,
-            entity_store: &mut self.entity_store,
+    /// Create a new entity component manager.
+    pub fn new(entity_store: E) -> Self {
+        EntityComponentManager {
+            entity_counter: 0,
+            component_store: ComponentStore::default(),
+            entity_store,
         }
     }
 
@@ -171,5 +161,15 @@ where
         let entity = entity.into();
         self.component_store.remove_entity(entity);
         self.entity_store.remove_entity(entity);
+    }
+
+    /// Returns references to the entity and component store.
+    pub fn stores(&self) -> (&E, &ComponentStore) {
+        (&self.entity_store, &self.component_store)
+    }
+
+    /// Returns mutable references to the entity and component store.
+    pub fn stores_mut(&mut self) -> (&mut E, &mut ComponentStore) {
+        (&mut self.entity_store, &mut self.component_store)
     }
 }
