@@ -17,7 +17,7 @@ use crate::component::Component;
 /// impl HelloResource {
 ///     pub fn say_hello(&self) -> &str {
 ///         "Hello"
-///     }    
+///     }
 /// }
 ///
 /// let mut resources = Resources::new();
@@ -31,14 +31,9 @@ pub struct Resources {
 }
 
 impl Resources {
-    /// Creates a service resources with an empty Resources map.
-    pub fn new() -> Self {
-        Resources::default()
-    }
-
-    /// Inserts a new resource.
-    pub fn insert<C: Component>(&mut self, resource: C) {
-        self.resources.insert(TypeId::of::<C>(), Box::new(resource));
+    /// Returns `true` if the resources contains a resource of the given type overwise `false` .
+    pub fn contains<C: Component>(&self) -> bool {
+        self.resources.contains_key(&TypeId::of::<C>())
     }
 
     /// Gets an element from the resources.
@@ -87,6 +82,26 @@ impl Resources {
             })
     }
 
+    /// Inserts a new resource.
+    pub fn insert<C: Component>(&mut self, resource: C) {
+        self.resources.insert(TypeId::of::<C>(), Box::new(resource));
+    }
+
+    /// Returns true if the resources contains no elements.
+    pub fn is_empty(&self) -> bool {
+        self.resources.is_empty()
+    }
+
+    /// Returns the number of elements in the resources.
+    pub fn len(&self) -> usize {
+        self.resources.len()
+    }
+
+    /// Creates a service resources with an empty Resources map.
+    pub fn new() -> Self {
+        Resources::default()
+    }
+
     /// Try to get an element from the resources.
     pub fn try_get<C: Component>(&self) -> Option<&C> {
         if let Some(e) = self.resources.get(&TypeId::of::<C>()) {
@@ -107,21 +122,6 @@ impl Resources {
         }
 
         None
-    }
-
-    /// Returns `true` if the resources contains a resource of the given type overwise `false` .
-    pub fn contains<C: Component>(&self) -> bool {
-        self.resources.contains_key(&TypeId::of::<C>())
-    }
-
-    /// Returns the number of elements in the resources.
-    pub fn len(&self) -> usize {
-        self.resources.len()
-    }
-
-    /// Returns true if the resources contains no elements.
-    pub fn is_empty(&self) -> bool {
-        self.resources.is_empty()
     }
 }
 
