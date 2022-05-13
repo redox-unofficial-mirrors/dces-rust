@@ -55,17 +55,17 @@ impl<'a, E> SystemStoreBuilder<'a, E>
 where
     E: EntityStore,
 {
-    /// Add a `priority` to the system. Default priority is 0.
-    pub fn with_priority(self, priority: Priority) -> Self {
-        self.priority.set(priority);
-        self
-    }
-
     /// Finishing the creation of the system.
     pub fn build(self) -> u32 {
         self.system_store
             .register_priority(self.priority.get(), self.entity_system_id);
         self.entity_system_id
+    }
+
+    /// Add a `priority` to the system. Default priority is 0.
+    pub fn with_priority(self, priority: Priority) -> Self {
+        self.priority.set(priority);
+        self
     }
 }
 
@@ -92,6 +92,28 @@ impl<E> SystemStore<E>
 where
     E: EntityStore,
 {
+    /// Returns a reference of a entity system. If the entity system
+    /// does not exists `NotFound` will be returned.
+    pub fn borrow_entity_system(
+        &self,
+        entity_system_id: u32,
+    ) -> Result<&EntitySystem<E>, NotFound> {
+        self.entity_systems
+            .get(&entity_system_id)
+            .map_or_else(|| Err(NotFound::EntitySystem(entity_system_id)), Ok)
+    }
+
+    /// Returns a reference of the init entity system. If the init
+    /// entity system does not exists `None` will be returned.
+    pub fn borrow_init_system(&self) -> &Option<EntitySystem<E>> {
+        &self.init_system
+    }
+
+    /// Returns a reference of the cleanup entity system. If the init
+    /// entity system does not exists `None` will be returned.
+    pub fn borrow_cleanup_system(&self) -> &Option<EntitySystem<E>> {
+        &self.cleanup_system
+    }
     /// Creates a new system store with default values.
     pub fn new() -> Self {
         SystemStore {
@@ -136,25 +158,6 @@ where
             .push(system_id);
     }
 
-    /// Returns a reference of a entity system. If the entity system does not exists `NotFound` will be returned.
-    pub fn borrow_entity_system(
-        &self,
-        entity_system_id: u32,
-    ) -> Result<&EntitySystem<E>, NotFound> {
-        self.entity_systems
-            .get(&entity_system_id)
-            .map_or_else(|| Err(NotFound::EntitySystem(entity_system_id)), Ok)
-    }
-
-    /// Returns a reference of the init entity system. If the init entity system does not exists `None` will be returned.
-    pub fn borrow_init_system(&self) -> &Option<EntitySystem<E>> {
-        &self.init_system
-    }
-
-    /// Returns a reference of the cleanup entity system. If the init entity system does not exists `None` will be returned.
-    pub fn borrow_cleanup_system(&self) -> &Option<EntitySystem<E>> {
-        &self.cleanup_system
-    }
 }
 
 #[cfg(test)]
