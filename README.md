@@ -115,7 +115,7 @@ the repository like this:
 git clone --recurse-submodules https://gitlab.redox-os.org/redox-os/dces-rust.git
 ```
 
-[dces_guide]: https://gitlab.redox-os.org/rzerres/dces-guide
+[dces_guide]: https://gitlab.redox-os.org/redox-os/dces-guide
 
 ## Future features
 
