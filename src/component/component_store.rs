@@ -51,8 +51,12 @@ impl ComponentBuilder {
     }
 }
 
-/// The `ComponentStore` stores the components of entities and uses strings as component keys. It could be used to
-/// borrow the components of the entities.
+/// The `ComponentStore` handles the properties of each entity.
+///
+/// To identify and look up a given component the hashmap key (a
+/// string) is evaluated.  The component property itself is stored
+/// inside the hashmap value. A typical usage szenario lookup the entity and borrow its
+/// components.
 #[derive(Default, Debug)]
 pub struct ComponentStore {
     components: Components,

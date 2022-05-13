@@ -40,17 +40,22 @@ where
     }
 }
 
-/// This trait is used to internal handle all components types. This trait is implicitly implemented for all other types.
+/// This trait provied associated functions to handle all supported
+/// components types.
+///
+/// This trait is implicitly implemented for all other types.
 pub trait Component: Any {}
 impl<E: Any> Component for E {}
 
-/// This struct is used to store a component with its type id. Used for dynamic component adding.
+/// Used to store a `component` identified via its type
+/// id. Dynamic component adding will make use of this struct.
 pub struct ComponentBox {
     component: Box<dyn Any>,
     type_id: TypeId,
 }
 
-/// This struct is used to store a shared component with its type id. Used for dynamic component adding.
+/// Used to store a `shared component` identified via its type
+/// id. Dynamic component adding will make use of this struct.
 pub struct SharedComponentBox {
     source: Entity,
     type_id: TypeId,
@@ -65,7 +70,7 @@ impl SharedComponentBox {
         }
     }
 
-    /// Consumes the component box and returns the type id and the source.
+    /// Consumes the component box and returns its type id beside the source (the entity).
     pub fn consume(self) -> (TypeId, Entity) {
         (self.type_id, self.source)
     }
@@ -86,16 +91,16 @@ impl ComponentBox {
     }
 }
 
-/// The EntityComponentManager represents the main entity and component storage.
+/// The EntityComponentManager represents the structure of an entity store.
+///
+/// It will keep track of the bound entities and the associated component store.
 #[derive(Default)]
 pub struct EntityComponentManager<E>
 where
     E: EntityStore,
 {
     component_store: ComponentStore,
-
     entity_store: E,
-
     entity_counter: u32,
 }
 
@@ -112,37 +117,37 @@ where
         }
     }
 
-    /// Returns references to the component store and entity store.
+    /// Returns references to the entity and component store.
     pub fn stores(&self) -> (&E, &ComponentStore) {
         (&self.entity_store, &self.component_store)
     }
 
-    /// Returns mutable references to the component store and entity store.
+    /// Returns mutable references to the entity and component store.
     pub fn stores_mut(&mut self) -> (&mut E, &mut ComponentStore) {
         (&mut self.entity_store, &mut self.component_store)
     }
 
-    /// Return a reference to the component container.
+    /// Return a reference to the component store.
     pub fn component_store(&self) -> &ComponentStore {
         &self.component_store
     }
 
-    /// Return a mutable reference to the component container.
+    /// Return a mutable reference to the component store.
     pub fn component_store_mut(&mut self) -> &mut ComponentStore {
         &mut self.component_store
     }
 
-    /// Return a reference to the entity container.
+    /// Return a reference to the entity store.
     pub fn entity_store(&mut self) -> &mut E {
         &mut self.entity_store
     }
 
-    /// Return a mutable reference to the entity container.
+    /// Return a mutable reference to the entity store.
     pub fn entity_store_mut(&mut self) -> &mut E {
         &mut self.entity_store
     }
 
-    /// Creates a new entity and returns a returns an `TypeEntityBuilder`.
+    /// Creates a new entity and returns an `EntityBuilder`.
     pub fn create_entity(&mut self) -> EntityBuilder<'_, E> {
         let entity: Entity = self.entity_counter.into();
         self.entity_counter += 1;
@@ -161,7 +166,7 @@ where
         // self.component_store.register_entity(entity);
     }
 
-    /// Removes a `entity` from the manager.
+    /// Removes an `entity` from the manager.
     pub fn remove_entity(&mut self, entity: impl Into<Entity>) {
         let entity = entity.into();
         self.component_store.remove_entity(entity);

@@ -8,9 +8,10 @@ use crate::{
     system::{System, SystemStore, SystemStoreBuilder},
 };
 
-/// The `World` struct represents the main interface of the library. It used
-/// as storage of entities, components and systems.
-pub struct World<E>
+/// The `World` struct represents the main interface of the
+/// library. It is used as a storage provider for entities, components
+/// and systems.
+pub struct World<E: 'static>
 where
     E: EntityStore,
 {
@@ -21,7 +22,7 @@ where
     first_run: bool,
 }
 
-impl<E> Drop for World<E>
+impl<E: 'static> Drop for World<E>
 where
     E: EntityStore,
 {
@@ -34,84 +35,24 @@ where
     }
 }
 
+// TODO: explain why this is safe code
 unsafe impl<E> Send for World<E> where E: EntityStore {}
 
 impl<E> World<E>
 where
     E: EntityStore,
 {
-    /// Creates a new world from the given entity store.
-    pub fn from_entity_store(entity_store: E) -> Self {
-        World {
-            entity_component_manager: EntityComponentManager::new(entity_store),
-            resources: Resources::default(),
-            system_counter: 0,
-            system_store: SystemStore::new(),
-            first_run: true,
-        }
-    }
-
-    /// Returns a reference to the resources store.
-    pub fn resources(&self) -> &Resources {
-        &self.resources
-    }
-
-    /// Returns a mutable reference to the resources store.
-    pub fn resources_mut(&mut self) -> &mut Resources {
-        &mut self.resources
-    }
-
-    /// Inserts a new resource.
-    pub fn insert_resource<C: Component>(&mut self, resource: C) {
-        self.resources.insert(resource);
-    }
-
-    /// Gets an element from the resources.
-    pub fn resource<C: Component>(&self) -> &C {
-        self.resources.get::<C>()
-    }
-
-    /// Gets a mutable reference of the requested element.
-    pub fn resource_mut<C: Component>(&mut self) -> &mut C {
-        self.resources.get_mut::<C>()
-    }
-
-    /// Try to get an element from the resources.
-    pub fn try_resource<C: Component>(&self) -> Option<&C> {
-        self.resources.try_get::<C>()
-    }
-
-    /// Try to get an element from the resources.
-    pub fn try_resource_mut<C: Component>(&mut self) -> Option<&mut C> {
-        self.resources.try_get_mut::<C>()
-    }
-
-    /// Returns `true` if the resources contains a resource of the given type overwise `false` .
+    /// Returns `true` if the resources contains a resource of the given type, overwise `false` .
     pub fn contains_resource<C: Component>(&self) -> bool {
         self.resources.contains::<C>()
     }
 
-    /// Creates a new entity and returns a returns an `TypeEntityBuilder`.
+    /// Creates a new entity and returns a `TypeEntityBuilder`.
     pub fn create_entity(&mut self) -> EntityBuilder<'_, E> {
         self.entity_component_manager.create_entity()
     }
 
-    /// Deletes the given `entity`.
-    pub fn remove_entity(&mut self, entity: impl Into<Entity>) {
-        self.entity_component_manager.remove_entity(entity);
-    }
-
-    /// Registers the init system.
-    pub fn register_init_system(&mut self, init_system: impl System<E>) {
-        self.system_store.register_init_system(init_system);
-    }
-
-    /// Registers the cleanup system.
-    pub fn register_cleanup_system(&mut self, cleanup_system: impl System<E>) {
-        self.system_store.register_cleanup_system(cleanup_system);
-    }
-
-    /// Creates a new entity system and returns a returns an `SystemStoreBuilder`.
+    /// Creates a new entity system and returns a `SystemStoreBuilder`.
     pub fn create_system(&mut self, system: impl System<E>) -> SystemStoreBuilder<'_, E> {
         let entity_system_id = self.system_counter;
         self.system_store.register_system(system, entity_system_id);
@@ -124,14 +65,25 @@ where
         }
     }
 
-    /// Removes the given `entity`.
-    pub fn remove_system(&mut self, system_id: u32) {
-        self.system_store.remove_system(system_id);
+    /// Creates a new world from the given entity store.
+    pub fn from_entity_store(entity_store: E) -> Self {
+        World {
+            entity_component_manager: EntityComponentManager::new(entity_store),
+            resources: Resources::default(),
+            system_counter: 0,
+            system_store: SystemStore::new(),
+            first_run: true,
+        }
     }
 
-    /// Borrows mutable the entity component manager.
+    /// Borrows a mutable instance of an entity component manager.
     pub fn entity_component_manager(&mut self) -> &mut EntityComponentManager<E> {
         &mut self.entity_component_manager
+    }
+
+    /// Inserts a new resource.
+    pub fn insert_resource<C: Component>(&mut self, resource: C) {
+        self.resources.insert(resource);
     }
 
     /// Print infos about the given entity.
@@ -139,6 +91,46 @@ where
         self.entity_component_manager
             .component_store()
             .print_entity(entity);
+    }
+
+    /// Registers the cleanup system.
+    pub fn register_cleanup_system(&mut self, cleanup_system: impl System<E>) {
+        self.system_store.register_cleanup_system(cleanup_system);
+    }
+
+    /// Registers the init system.
+    pub fn register_init_system(&mut self, init_system: impl System<E>) {
+        self.system_store.register_init_system(init_system);
+    }
+
+    /// Deletes the given `entity`.
+    pub fn remove_entity(&mut self, entity: impl Into<Entity>) {
+        self.entity_component_manager.remove_entity(entity);
+    }
+
+    /// Gets an element from the resources.
+    pub fn resource<C: Component>(&self) -> &C {
+        self.resources.get::<C>()
+    }
+
+    /// Gets a mutable reference of the requested element.
+    pub fn resource_mut<C: Component>(&mut self) -> &mut C {
+        self.resources.get_mut::<C>()
+    }
+
+    /// Returns a reference to the resources store.
+    pub fn resources(&self) -> &Resources {
+        &self.resources
+    }
+
+    /// Returns a mutable reference to the resources store.
+    pub fn resources_mut(&mut self) -> &mut Resources {
+        &mut self.resources
+    }
+
+    /// Removes the given `entity`.
+    pub fn remove_system(&mut self, system_id: u32) {
+        self.system_store.remove_system(system_id);
     }
 
     /// Run all systems of the world.
@@ -162,6 +154,16 @@ where
                     .run(&mut self.entity_component_manager, &mut self.resources);
             }
         }
+    }
+
+    /// Try to get an element from the resources.
+    pub fn try_resource<C: Component>(&self) -> Option<&C> {
+        self.resources.try_get::<C>()
+    }
+
+    /// Try to get an element from the resources.
+    pub fn try_resource_mut<C: Component>(&mut self) -> Option<&mut C> {
+        self.resources.try_get_mut::<C>()
     }
 }
 

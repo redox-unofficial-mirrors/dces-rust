@@ -1,5 +1,5 @@
 /// Represents an entity.
-#[derive(Copy, Clone, PartialEq, Hash, Eq, Debug, Ord, PartialOrd, Default)]
+#[derive(Copy, Clone, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Entity(pub u32);
 
 impl From<u32> for Entity {
@@ -8,11 +8,12 @@ impl From<u32> for Entity {
     }
 }
 
-/// This trait is used to define a custom store for entities.
-/// A entity container is used for entity iteration inside of the
-/// system's run methods.
+/// This trait provides methods to handle entity stores.
+///
+/// Each entity serves as a container. Inside the system's run
+/// methods, you can iterate over the registered entities.
 pub trait EntityStore {
-    /// Registers the give 'entity'.
+    /// Registers the given 'entity'.
     fn register_entity(&mut self, entity: impl Into<Entity>);
 
     /// Removes the given 'entity'.

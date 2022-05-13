@@ -37,5 +37,6 @@ fn main() {
         .build();
 
     world.create_system(PrintSystem).build();
+
     world.run();
 }
