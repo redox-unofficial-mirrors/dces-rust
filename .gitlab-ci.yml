@@ -1,33 +1,84 @@
-image: "redoxos/redoxer"
-
 variables:
-    CARGO_HOME: $CI_PROJECT_DIR/cargo
-before_script:
-  - apt-get update -qq
-  - apt-get install -qq build-essential curl git
+  cargo_cache: "${CI_PROJECT_DIR}/.cache/"
+  #dces_guide_root: "/var/www/doc/dces-guide"
+  dces_guide_root: "public/dces-guide"
 
-build:linux:
+.cache: &cargo_install_root
+  cache:
+    key: "${CI_COMMIT_REF_SLUG}"
+    paths:
+      - "${PWD}/.cargo"
+
+stages:
+  - build
+  - test
+
+build_linux:
   stage: build
+  image: rust:latest
+  only:
+    - main
+    - develop
+  before_script:
+    - echo "Prepare Environment:"
+    - export CARGO_HOME="$PWD/.cargo"
+    - echo $CARGO_HOME
+    - export PATH="$PWD/.cargo/bin:$PATH"
+    - echo "$RUSTC_WRAPPER"
+    - rustc --verbose --version
+    - cargo --verbose --version
+
+  <<: *cargo_install_root
+
   script:
     - cargo build
-    - make tests
-  cache:
-    paths:
-      - cargo/
-      - target/
 
-build:redox:
-  stage: build
+  artifacts:
+    paths:
+      - .cargo/
+
+###
+# temporary disabled, since we need redoxer with rustc >= 1.60
+###
+# build_redox:
+#   stage: build
+#   image: "redoxos/redoxer:latest"
+#   only:
+#     - main
+#     - develop
+#   before_script:
+#     - echo "Prepare Environment:"
+#     - export CARGO_HOME="$PWD/.cargo"
+#     - echo $CARGO_HOME
+#     - export PATH="$PWD/.cargo/bin:$PATH"
+#     - echo "$RUSTC_WRAPPER"
+#     - apt-get update -qq
+#     - apt-get install -qq build-essential curl git rustup
+#     - rustc --verbose --version
+#     - cargo --verbose --version
+
+#   <<: *cargo_install_root
+
+#   script:
+#     - cargo build
+
+#   artifacts:
+#     paths:
+#       - .cargo/
+
+test:
+  stage: test
+  image: rust:latest
+  dependencies:
+    - build_linux
+  only:
+    - main
+    - develop
+
   script:
-    - redoxer build --verbose
-  cache:
-    paths:
-      - cargo/
-      - target/
+    - cargo test
 
-test:linux:
-    stage: test
-    dependencies:
-        - build:linux
-    script:
-      - cargo test
+  artifacts:
+    #paths:
+    #  - "$dces_guide_root/$language"
+    expire_in: 1 weeks
