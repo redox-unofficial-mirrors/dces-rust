@@ -1,29 +1,54 @@
 use std::any::{type_name, Any, TypeId};
-
 use fxhash::FxHashMap;
 
 use crate::component::Component;
 
-/// The struct `Resources` represents a global resources. It is used to insert and call
-/// global elements like services.
+/// `Resources` provides a resources store.
+///
+/// This store is designed to save global elements, like services.
+/// You can manage resources consuming the implemented functions.
 ///
 /// # Examples
 ///
-/// ```
+/// ```rust
 /// use dces::resources::Resources;
 ///
-/// struct HelloResource;
+/// struct MyResource<'r> {
+///   count: i32,
+///   name:  &'r str,
+/// }
 ///
-/// impl HelloResource {
+/// impl <'r> MyResource<'r> {
+///     pub fn create() -> Self {
+///         MyResource {
+///             count: 0,
+///             name: "My_DCES_Resource",
+///         }
+///     }
+///
+///     pub fn change_name(&mut self, name: &'r str) -> &str {
+///         self.name = name;
+///         self.name
+///     }
+///
+///     pub fn increment_count(&mut self, count: i32) -> i32 {
+///         self.count += count;
+///         self.count
+///     }
+///
 ///     pub fn say_hello(&self) -> &str {
-///         "Hello"
+///         "Hey, I'm a resource."
 ///     }
 /// }
 ///
-/// let mut resources = Resources::new();
-/// resources.insert(HelloResource);
+/// fn main() {
+///     let mut resource_store = Resources::new();
+///     resource_store.insert(MyResource::create());
 ///
-/// assert_eq!("Hello", resources.get::<HelloResource>().say_hello());
+///     assert_eq!("Hey, I'm a resource.", resource_store.get::<MyResource>().say_hello());
+///     assert_eq!(3, resource_store.get_mut::<MyResource>().increment_count(3));
+///     assert_eq!("My name is 'My_DCES_Resource'", resource_store.get_mut::<MyResource>().change_name("My name is 'My_DCES_Resource'"));
+/// }
 /// ```
 #[derive(Default)]
 pub struct Resources {
@@ -31,7 +56,8 @@ pub struct Resources {
 }
 
 impl Resources {
-    /// Returns `true` if the resources contains a resource of the given type overwise `false` .
+    /// Returns a boolean, whether the given resource store contains a resource matching the given type.
+    /// Returns `true` if the resources contains a given type overwise `false` .
     pub fn contains<C: Component>(&self) -> bool {
         self.resources.contains_key(&TypeId::of::<C>())
     }
@@ -40,13 +66,13 @@ impl Resources {
     ///
     /// # Panics
     ///
-    /// Panics if the there is no element for the given type.
+    /// Panics if the there is no element matching the given type.
     pub fn get<C: Component>(&self) -> &C {
         self.resources
             .get(&TypeId::of::<C>())
             .unwrap_or_else(|| {
                 panic!(
-                    "Resources.get(): type {} could not be found.",
+                    "Resources.get(): can't find type {}.",
                     type_name::<C>()
                 )
             })
@@ -59,7 +85,7 @@ impl Resources {
             })
     }
 
-    /// Gets a mutable reference of the requested element.
+    /// Gets a mutable reference to the requested element.
     ///
     /// # Panics
     ///
@@ -82,7 +108,7 @@ impl Resources {
             })
     }
 
-    /// Inserts a new resource.
+    /// Inserts a new resource into the Resources map.
     pub fn insert<C: Component>(&mut self, resource: C) {
         self.resources.insert(TypeId::of::<C>(), Box::new(resource));
     }
