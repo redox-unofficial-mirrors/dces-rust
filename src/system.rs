@@ -13,7 +13,9 @@ pub trait System<E>: Any
 where
     E: EntityStore,
 {
-    /// Runs the system and give access to the entity component manager.
+    /// Runs the system
+    ///
+    /// The optional parameter give access tho the entity component manager and associated resources.
     fn run(&self, _ecm: &mut EntityComponentManager<E>, _res: &mut Resources) {}
 }
 
